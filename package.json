@@ -1,0 +1,19 @@
+{
+  "name": "cloudformation-for-ec2",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/thanhnt37/cloudformation-for-ec2.git"
+  },
+  "author": "tatthanh.dev@gmail.com",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/thanhnt37/cloudformation-for-ec2/issues"
+  },
+  "homepage": "https://github.com/thanhnt37/cloudformation-for-ec2#readme"
+}
