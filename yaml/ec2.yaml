@@ -234,6 +234,7 @@ Resources:
     Properties:
       InstanceType: t3.large
       ImageId: ami-0cf14aecde598bc8f
+      KeyName: mautic_development # key_pair name
       NetworkInterfaces:
         - NetworkInterfaceId: !Ref NetworkInterface1ForPublicSubnet1
           DeviceIndex: 0
