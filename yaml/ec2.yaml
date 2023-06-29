@@ -90,29 +90,17 @@ Resources:
 # yêu cầu elastic IP và cho phép các subnet truy cập internet thông qua NAT gateway
 # thực ra thì cái này là optional, không cần NAT gateway thì public subnet vẫn có thể truy cập internet
 # NAT gateway có ý nghĩa hơn với private subnet, cho phép private subnet khả năng truy cập internet
-  NatGateway1EIP:
-    Type: AWS::EC2::EIP
-    DependsOn: InternetGatewayAttachment
-    Properties:
-      Domain: vpc
-
   NatGateway2EIP:
     Type: AWS::EC2::EIP
     DependsOn: InternetGatewayAttachment
     Properties:
       Domain: vpc
 
-  NatGateway1:
-    Type: AWS::EC2::NatGateway
-    Properties:
-      AllocationId: !GetAtt NatGateway1EIP.AllocationId
-      SubnetId: !Ref PublicSubnet1
-
   NatGateway2:
     Type: AWS::EC2::NatGateway
     Properties:
       AllocationId: !GetAtt NatGateway2EIP.AllocationId
-      SubnetId: !Ref PublicSubnet2
+      SubnetId: !Ref PrivateSubnet1
 
 # khởi tạo route table và public route đi ra internet cho public subnet
   PublicRouteTable:
@@ -142,6 +130,7 @@ Resources:
       SubnetId: !Ref PublicSubnet2
 
 # khởi tạo route table và public route đi ra internet cho các private subnet
+# theo thứ tự là tạo route_table, rồi tạo route đi ra internet thông qua NAT gateway, sau đó gán route_table đó cho subnet cần
   PrivateRouteTable1:
     Type: AWS::EC2::RouteTable
     Properties:
@@ -152,7 +141,7 @@ Resources:
     Properties:
       RouteTableId: !Ref PrivateRouteTable1
       DestinationCidrBlock: 0.0.0.0/0
-      NatGatewayId: !Ref NatGateway1
+      NatGatewayId: !Ref NatGateway2
 
   PrivateSubnet1RouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
@@ -164,9 +153,6 @@ Resources:
     Type: AWS::EC2::RouteTable
     Properties:
       VpcId: !Ref VPC
-      Tags:
-        - Key: Name
-          Value: !Sub ${EnvironmentName} Private Routes (AZ2)
 
   DefaultPrivateRoute2:
     Type: AWS::EC2::Route
