@@ -189,6 +189,77 @@ Resources:
       GroupDescription: "Security group with no ingress rule"
       VpcId: !Ref VPC
 
+# configuration for EC2 instance
+# security_group + elastic IP --> network_interface --> ec2
+  SSHAccessSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      VpcId: !Ref VPC
+      GroupDescription: Enable SSH access via port 22
+      SecurityGroupIngress:
+        - CidrIp: 0.0.0.0/0
+          FromPort: 22
+          IpProtocol: tcp
+          ToPort: 22
+
+  HTTPAccessSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      VpcId: !Ref VPC
+      GroupDescription: Enable HTTP access via user defined port
+      SecurityGroupIngress:
+        - CidrIp: 0.0.0.0/0
+          FromPort: 80
+          IpProtocol: tcp
+          ToPort: 80
+
+  HTTPSAccessSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      VpcId: !Ref VPC
+      GroupDescription: Enable HTTPs access via user defined port
+      SecurityGroupIngress:
+        - CidrIp: 0.0.0.0/0
+          FromPort: 443
+          IpProtocol: tcp
+          ToPort: 443
+
+  NetworkInterface1ForPublicSubnet1:
+    Type: 'AWS::EC2::NetworkInterface'
+    Properties:
+      SubnetId: !Ref PublicSubnet1
+      GroupSet:
+        - !Ref SSHAccessSecurityGroup
+        - !Ref HTTPAccessSecurityGroup
+        - !Ref HTTPSAccessSecurityGroup
+
+# đối với EIPAssociation: nếu EC2 chỉ có 1 network_interface thì gán nó vào network_interface hay ec2 đều được
+# nhưng nếu ec2 có nhiều network_interface, thì cần chỉ ra 1 NetworkInterfaceId
+# https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-ec2-eip-association.html
+  NetworkInterface1EIP:
+    Type: AWS::EC2::EIP
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      Domain: vpc
+
+  EIPAssociationForNetworkInterface1:
+    Type: 'AWS::EC2::EIPAssociation'
+    Properties:
+      AllocationId: !GetAtt NetworkInterface1EIP.AllocationId
+      NetworkInterfaceId: !Ref NetworkInterface1ForPublicSubnet1
+
+# một số thông tin khác ko cần khai báo như AZ, security_group, subnet ... ????
+# nó sẽ tự động ăn theo network_interface
+# NetworkInterfaceAttachment là không cần thiết
+  EC2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t3.large
+      ImageId: ami-0cf14aecde598bc8f
+      NetworkInterfaces:
+        - NetworkInterfaceId: !Ref NetworkInterface1ForPublicSubnet1
+          DeviceIndex: 0
+
 Outputs:
   VPC:
     Description: A reference to the created VPC
