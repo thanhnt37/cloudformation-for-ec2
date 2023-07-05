@@ -38,7 +38,7 @@ Resources:
       EnableDnsHostnames: true
       Tags:
         - Key: Name
-          Value: !Ref EnvironmentName
+          Value: !Sub 'mautic-${EnvironmentName}-vpc'
 
 # khởi tạo và gắn Internet Gateway vào cho VPC, cho phép truy cập internet
   InternetGateway:
@@ -259,6 +259,9 @@ Resources:
           sudo systemctl start httpd
           curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.3/install.sh | bash && source ~/.bashrc 
           sudo yum install -y git
+      Tags:
+        - Key: Name
+          Value: !Sub 'mautic-${EnvironmentName}-ec2'
 
 Outputs:
   VPC:
