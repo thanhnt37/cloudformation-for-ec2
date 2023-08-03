@@ -144,6 +144,17 @@ Resources:
           IpProtocol: tcp
           ToPort: 443
 
+  RDSAccessSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      VpcId: !Ref VPC
+      GroupDescription: Enable database access to RDS
+      SecurityGroupIngress:
+        - CidrIp: 0.0.0.0/0
+          FromPort: 3306
+          IpProtocol: tcp
+          ToPort: 3306
+
   NetworkInterface1ForPublicSubnet1:
     Type: 'AWS::EC2::NetworkInterface'
     Properties:
@@ -152,6 +163,7 @@ Resources:
         - !Ref SSHAccessSecurityGroup
         - !Ref HTTPAccessSecurityGroup
         - !Ref HTTPSAccessSecurityGroup
+        - !Ref RDSAccessSecurityGroup
       Tags:
         - Key: Name
           Value: !Sub '${AppName}-${EnvironmentCode}-eni-1-for-subnet-1'
@@ -164,6 +176,7 @@ Resources:
         - !Ref SSHAccessSecurityGroup
         - !Ref HTTPAccessSecurityGroup
         - !Ref HTTPSAccessSecurityGroup
+        - !Ref RDSAccessSecurityGroup
       Tags:
         - Key: Name
           Value: !Sub '${AppName}-${EnvironmentCode}-eni-1-for-subnet-2'
