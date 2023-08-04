@@ -26,12 +26,22 @@ Parameters:
   PublicSubnet1CIDR:
     Description: the IP range (CIDR notation) for the public subnet in the first Availability Zone
     Type: String
-    Default: 192.168.1.0/24
+    Default: 192.168.10.0/24
 
   PublicSubnet2CIDR:
     Description: the IP range (CIDR notation) for the public subnet in the second Availability Zone
     Type: String
-    Default: 192.168.2.0/24
+    Default: 192.168.11.0/24
+
+  PrivateSubnet1CIDR:
+    Description: the IP range (CIDR notation) for the private subnet in the first Availability Zone
+    Type: String
+    Default: 192.168.20.0/24
+
+  PrivateSubnet2CIDR:
+    Description: the IP range (CIDR notation) for the private subnet in the second Availability Zone
+    Type: String
+    Default: 192.168.21.0/24
 
   SSLCertificateArn:
     Description: The Amazon Resource Name (ARN) of the certificate
@@ -40,6 +50,14 @@ Parameters:
   KeyPairName:
     Description: Key Pair for EC2
     Type: 'AWS::EC2::KeyPair::KeyName'
+
+  RDSMasterUsername:
+    Description: master user name for rds database
+    Type: String
+
+  RDSMasterPassword:
+    Description: master password for rds database
+    Type: String
 
 Resources:
   VPC:
@@ -150,6 +168,17 @@ Resources:
       VpcId: !Ref VPC
       GroupDescription: Enable database access to RDS
       SecurityGroupEgress:
+        - CidrIp: 0.0.0.0/0
+          FromPort: 3306
+          IpProtocol: tcp
+          ToPort: 3306
+
+  RDSInboundSG:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      VpcId: !Ref VPC
+      GroupDescription: Enable database access
+      SecurityGroupIngress:
         - CidrIp: 0.0.0.0/0
           FromPort: 3306
           IpProtocol: tcp
@@ -293,6 +322,54 @@ Resources:
       DefaultActions:
         - Type: forward
           TargetGroupArn: !Ref ELBTargetGroup1 # To route to one or more target groups, use ForwardConfig instead.
+
+# để tạo RDS instance trong VPC bắt buộc phải tạo subnet_group chứa ít nhất 2 subnet thuộc VPC đó
+# thường thì RDS sẽ được đặt trong các private subnet
+# nếu MultiAZ = true thì rds instance sẽ đc tạo ở nhiều AZ thuộc region hiện tại
+# nếu MultiAZ = false thì rds instance sẽ đc tạo ở AvailabilityZone mà mình set, nên đặt AvailabilityZone cùng giá trị với ec2 instance
+  PrivateSubnet1ForRDS:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [ 0, !GetAZs  '' ]
+      CidrBlock: !Ref PrivateSubnet1CIDR
+      MapPublicIpOnLaunch: false
+
+# TODO: tại sao nó vẫn thông ra public_route, có 2 public_route trong khi phía trên chỉ tạo 1 cái cho public_subnet
+  PrivateSubnet2ForRDS:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [ 1, !GetAZs  '' ]
+      CidrBlock: !Ref PrivateSubnet2CIDR
+      MapPublicIpOnLaunch: false
+
+  RDSDBSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupName: !Sub '${AppName}-${EnvironmentCode}-rds-subnet-group'
+      DBSubnetGroupDescription: !Sub 'rds subnet group for ${AppName}-${EnvironmentCode}-rds'
+      SubnetIds:
+        - !Ref PrivateSubnet1ForRDS
+        - !Ref PrivateSubnet2ForRDS
+
+  RDSInstance:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      DBInstanceIdentifier: !Sub '${AppName}-${EnvironmentCode}-rds'
+      DBName: !Sub '${AppName}_${EnvironmentCode}_rds'
+      StorageType: gp2
+      AllocatedStorage: 20
+      Engine: mysql # TODO: try Aurora
+      EngineVersion: 8.0.33
+      PubliclyAccessible: false
+      DBInstanceClass: db.t3.medium # TODO: dynamic as env
+      MultiAZ: false
+      MasterUsername: !Ref RDSMasterUsername
+      MasterUserPassword: !Ref RDSMasterPassword
+      DBSubnetGroupName: !Ref RDSDBSubnetGroup
+      VPCSecurityGroups:
+        - !Ref RDSInboundSG
 
 Outputs:
   VPC:
