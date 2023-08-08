@@ -335,9 +335,12 @@ Resources:
     Properties:
       DBInstanceIdentifier: !Sub '${AppName}-${EnvironmentCode}-rds'
       DBName: !Sub '${AppName}_${EnvironmentCode}_rds'
-      Engine: aurora-mysql
+      StorageType: gp2
+      AllocatedStorage: 20
+      Engine: mysql # TODO: try Aurora
+      EngineVersion: 8.0.33
       PubliclyAccessible: false
-      DBInstanceClass: db.t4g.large # TODO: dynamic as env
+      DBInstanceClass: db.r5.2xlarge # TODO: dynamic as env
       MultiAZ: false
       MasterUsername: !Ref RDSMasterUsername
       MasterUserPassword: !Ref RDSMasterPassword
