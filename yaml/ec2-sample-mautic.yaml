@@ -62,6 +62,9 @@ Parameters:
     Description: master password for rds database
     Type: String
 
+Conditions:
+  isProduction: !Equals [!Ref EnvironmentCode, "prod"]
+
 Resources:
   VPC:
     Type: AWS::EC2::VPC
@@ -219,7 +222,7 @@ Resources:
   EC2Instance1ForSubnet1:
     Type: AWS::EC2::Instance
     Properties:
-      InstanceType: t3.large
+      InstanceType: !If [isProduction, "t3.xlarge", "t3.large"]
       ImageId: ami-0cf14aecde598bc8f
       KeyName: !Ref KeyPairName
       NetworkInterfaces:
@@ -340,8 +343,9 @@ Resources:
       Engine: mysql # TODO: try Aurora
       EngineVersion: 8.0.33
       PubliclyAccessible: false
-      DBInstanceClass: db.r5.2xlarge # TODO: dynamic as env
+      DBInstanceClass: !If [isProduction, "db.m5.large", "db.t3.medium"]
       MultiAZ: false
+      DeletionProtection: true
       MasterUsername: !Ref RDSMasterUsername
       MasterUserPassword: !Ref RDSMasterPassword
       DBSubnetGroupName: !Ref RDSDBSubnetGroup
