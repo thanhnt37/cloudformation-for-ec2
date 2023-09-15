@@ -222,7 +222,7 @@ Resources:
   EC2Instance1ForSubnet1:
     Type: AWS::EC2::Instance
     Properties:
-      InstanceType: !If [isProduction, "t3.large", "t3.large"]
+      InstanceType: !If [ isProduction, "t3.xlarge", "t3.large" ]
       ImageId: ami-0cf14aecde598bc8f
       KeyName: !Ref KeyPairName
       NetworkInterfaces:
@@ -369,7 +369,7 @@ Resources:
       Engine: mysql # TODO: try Aurora
       EngineVersion: 8.0.33
       PubliclyAccessible: false
-      DBInstanceClass: !If [isProduction, "db.t3.medium", "db.t3.medium"]
+      DBInstanceClass: !If [isProduction, "db.m5.large", "db.t3.medium"]
       MultiAZ: false
       DeletionProtection: true
       MasterUsername: !Ref RDSMasterUsername
